@@ -4,12 +4,23 @@ import pandas as pd
 
 covid = pd.read_csv("deaths_simple.csv")
 countries = alt.topo_feature(data.world_110m.url, "countries")
-ids = pd.read_csv("world-110m-country-names.tsv", sep="\t")
-
+codes = pd.read_json("country_codes.json")
 # Add country ID's to the covid dataset to match a country to each geoshape
-covid  = covid.merge(ids, left_on="Country", right_on="name")
-covid.drop("name", axis=1, inplace=True)
+covid  = covid.merge(codes, left_on="Code", right_on="code")
+covid.drop(["name", "code"], axis=1, inplace=True)
+print(covid.head())
 print(covid.shape)
+
+background = alt.Chart(countries).mark_geoshape(
+    fill="lightgray",
+    stroke="white"
+).project(
+    "mercator"
+).properties(
+    width=800,
+    height=600
+)
+
 map = alt.Chart(countries).mark_geoshape(
     stroke = "white"
 ).project(
@@ -19,11 +30,9 @@ map = alt.Chart(countries).mark_geoshape(
     from_=alt.LookupData(covid, "id", ["Deaths"])
 ).encode(
     color="Deaths:Q",
-    # color = alt.condition("Deaths:Q", alt.value("lightgray")),
+    # color = alt.condition(alt.Predicate(equal="0", field="Deaths:Q"), alt.value("lightgray"), "Deaths:Q"),
     tooltip="Deaths:Q"
-).properties(
-    width=800,
-    height=600
 )
 
-map.show()
+chart = background + map
+chart.show()

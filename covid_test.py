@@ -27,11 +27,11 @@ map = alt.Chart(countries).mark_geoshape(
     "mercator"
 ).transform_lookup(
     lookup="id",
-    from_=alt.LookupData(covid, "id", ["Deaths"])
+    from_=alt.LookupData(covid, "id", list(covid.columns))
 ).encode(
     color="Deaths:Q",
     # color = alt.condition(alt.Predicate(equal="0", field="Deaths:Q"), alt.value("lightgray"), "Deaths:Q"),
-    tooltip="Deaths:Q"
+    tooltip=[alt.Tooltip("Country", type="nominal"), alt.Tooltip("Deaths", type="quantitative")]
 )
 
 chart = background + map

@@ -60,25 +60,31 @@ def map_deaths(countries, covid):
 
     #Time conversion
     covid["Date"] = covid["Date"].map(lambda x: pd.to_datetime(x).timestamp()*1000)
+
     #TODO: Altair only allows for smaller dataframes, figure out what to do (later)
-    covid = covid.tail(5000)
+    covid = covid.head(5000)
     first_date = covid["Date"].min()
     last_date = covid["Date"].max()
+
+    #Debugging, remove
+    print(covid[["Date", "Country", "Deaths"]].loc[covid["Country"]=="Denmark"])
+    print(datetime.datetime.fromtimestamp(first_date/1000))
+    print(datetime.datetime.fromtimestamp(last_date/1000))
 
 
     slider = alt.binding_range(
         step=24*60*60*1000, #step-size 1 day
         min=first_date, 
-        max=last_date)
+        max=last_date
+    )
 
-    #covid = covid.loc[covid["Date"] == covid["Date"].iloc[5000]]
     select_date=alt.selection_single(
         name="slider",
         fields=["Date"],
         bind=slider
     )
 
-    map = alt.Chart(countries).mark_geoshape(
+    map = alt.Chart(covid).mark_geoshape(
         stroke = "white"
     ).add_selection(
         select_date
@@ -88,7 +94,7 @@ def map_deaths(countries, covid):
         "mercator"
     ).transform_lookup(
         lookup="id",
-        from_=alt.LookupData(covid, "id", list(covid.columns))
+        from_=alt.LookupData(countries, "id", fields=["type", "properties", "geometry"])
     ).encode(
         color="Deaths:Q",
         tooltip=[alt.Tooltip("Country", type="nominal"), alt.Tooltip("Deaths", type="quantitative")]

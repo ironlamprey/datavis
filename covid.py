@@ -1,4 +1,3 @@
-import datetime
 import altair as alt
 from vega_datasets import data
 import pandas as pd
@@ -18,9 +17,11 @@ covid["Date"] = pd.to_datetime(covid["Date"])
 
 #Remove TOT from age for easier binning
 covid = covid[covid["Age"] != "TOT"]
+
 #Group by date for heatmap
 #TODO: The cases, deaths etc are commulated, if we want separate days this is doable
 #TODO: fill out missing dates for countries
+
 def group_covid_by_date_cum(covid):
     covid_total = pd.DataFrame()
     for date_df in covid.groupby("Date"):
@@ -66,24 +67,22 @@ def map_deaths(countries, covid):
     first_date = covid["Date"].min()
     last_date = covid["Date"].max()
 
-    #Debugging, remove
-    print(covid[["Date", "Country", "Deaths"]].loc[covid["Country"]=="Denmark"])
-    print(datetime.datetime.fromtimestamp(first_date/1000))
-    print(datetime.datetime.fromtimestamp(last_date/1000))
-
-
+    #Make slider
+    #TODO: see if we can label with dates, not timestamp
     slider = alt.binding_range(
         step=24*60*60*1000, #step-size 1 day
         min=first_date, 
         max=last_date
     )
 
+    #Selection by slider
     select_date=alt.selection_single(
         name="slider",
         fields=["Date"],
         bind=slider
     )
 
+    #Make map
     map = alt.Chart(covid).mark_geoshape(
         stroke = "white"
     ).add_selection(

@@ -1,3 +1,4 @@
+import datetime
 import altair as alt
 from vega_datasets import data
 import pandas as pd
@@ -17,16 +18,29 @@ covid["Date"] = pd.to_datetime(covid["Date"])
 
 #Remove TOT from age for easier binning
 covid = covid[covid["Age"] != "TOT"]
-
 #Group by date for heatmap
-#TODO: Not sure this is necessary right now
-for date_df in covid.groupby("Date"):
-    date = date_df[0] 
-    #print(date)
-    for country_df in date_df[1].groupby("Country"):
-        country = country_df[0]
-        #print(country_df[1].sum())
-
+#TODO: The cases, deaths etc are commulated, if we want separate days this is doable
+#TODO: fill out missing dates for countries
+def group_covid_by_date_cum(covid):
+    covid_total = pd.DataFrame()
+    for date_df in covid.groupby("Date"):
+        date = date_df[0] 
+        print("Date: #" + str(date) + "#")
+        #print(date)
+        for country_df in date_df[1].groupby("Country"):
+            id = country_df[1]["id"].iloc[0]
+            country = country_df[0]
+            code = country_df[1]["Code"].iloc[0]
+            total = country_df[1][["Deaths", "Cases", "Tests"]].sum()
+            covid_total = pd.concat([covid_total, pd.DataFrame({"Date": [date], 
+                                            "Code": [code], 
+                                            "Country": [country], 
+                                            "Deaths": total["Deaths"],
+                                            "Cases": total["Cases"],
+                                            "Tests": total["Tests"],
+                                            "id": [id]
+                                            })], ignore_index=True)
+    covid_total.to_csv("covid_grouped.csv")
 
 ### ---------- Functions for plotting ---------- ###
 
@@ -42,8 +56,9 @@ def make_background(countries):
     )
     return background
 
-
-def map(countries, covid):
+def map_deaths(countries, covid):
+    covid = covid.loc[covid["Date"] == covid["Date"].iloc[5000]]
+    print(covid)
     map = alt.Chart(countries).mark_geoshape(
         stroke = "white"
     ).project(
@@ -59,5 +74,8 @@ def map(countries, covid):
 
 
 ###  ---------- Main  ---------- ###
-chart = make_background(countries) #+ map(countries, covid)
+covid_total = pd.read_csv("covid_grouped.csv")
+
+chart = make_background(countries)
+chart += map_deaths(countries, covid_total)
 chart.show()

@@ -57,10 +57,33 @@ def make_background(countries):
     return background
 
 def map_deaths(countries, covid):
-    covid = covid.loc[covid["Date"] == covid["Date"].iloc[5000]]
-    print(covid)
+
+    #Time conversion
+    covid["Date"] = covid["Date"].map(lambda x: pd.to_datetime(x).timestamp()*1000)
+    #TODO: Altair only allows for smaller dataframes, figure out what to do (later)
+    covid = covid.tail(5000)
+    first_date = covid["Date"].min()
+    last_date = covid["Date"].max()
+
+
+    slider = alt.binding_range(
+        step=24*60*60*1000, #step-size 1 day
+        min=first_date, 
+        max=last_date)
+
+    #covid = covid.loc[covid["Date"] == covid["Date"].iloc[5000]]
+    select_date=alt.selection_single(
+        name="slider",
+        fields=["Date"],
+        bind=slider
+    )
+
     map = alt.Chart(countries).mark_geoshape(
         stroke = "white"
+    ).add_selection(
+        select_date
+    ).transform_filter(
+        select_date
     ).project(
         "mercator"
     ).transform_lookup(

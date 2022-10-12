@@ -2,6 +2,9 @@ import altair as alt
 from vega_datasets import data
 import pandas as pd
 
+# Let Altair use the whole dataframe
+alt.data_transformers.disable_max_rows()
+
 ###  ---------- Data import and cleaning ----------  ###
 
 countries = alt.topo_feature(data.world_110m.url, "countries")
@@ -61,9 +64,6 @@ def map_deaths(countries, covid):
 
     #Time conversion
     covid["Date"] = covid["Date"].map(lambda x: pd.to_datetime(x).timestamp()*1000)
-
-    #TODO: Altair only allows for smaller dataframes, figure out what to do (later)
-    covid = covid.head(5000)
     first_date = covid["Date"].min()
     last_date = covid["Date"].max()
 

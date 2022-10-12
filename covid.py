@@ -1,6 +1,7 @@
 import altair as alt
 from vega_datasets import data
 import pandas as pd
+import math
 
 # Let Altair use the whole dataframe
 alt.data_transformers.disable_max_rows()
@@ -15,6 +16,11 @@ covid = pd.read_csv("covid2.csv")
 covid = covid.merge(codes, left_on="Code", right_on="code")
 covid.drop(["name", "code"], axis=1, inplace=True)
 
+
+#Make dataframe for countries in the covid dataset
+covid_countries = covid[["Country", "Code", "id"]].drop_duplicates()
+print(covid_countries)
+
 #Date is date
 covid["Date"] = pd.to_datetime(covid["Date"])
 
@@ -24,27 +30,62 @@ covid = covid[covid["Age"] != "TOT"]
 #Group by date for heatmap
 #TODO: The cases, deaths etc are commulated, if we want separate days this is doable
 #TODO: fill out missing dates for countries
+        #for country_df in date_df[1].groupby("Country"):
 
+
+# TODO THIS DOES NOT WORK PROPERLY, seems to be Groupby not working.
 def group_covid_by_date_cum(covid):
+    last_seen_deaths = {}
+    last_seen_cases = {}
+    last_seen_tests = {}
+
     covid_total = pd.DataFrame()
     for date_df in covid.groupby("Date"):
         date = date_df[0] 
         print("Date: #" + str(date) + "#")
         #print(date)
-        for country_df in date_df[1].groupby("Country"):
-            id = country_df[1]["id"].iloc[0]
-            country = country_df[0]
-            code = country_df[1]["Code"].iloc[0]
-            total = country_df[1][["Deaths", "Cases", "Tests"]].sum()
+        for index, row in covid_countries.iterrows():
+            #if (pd.isna(code)):
+            #    continue
+            id = row["id"]
+            country = row["Country"]
+            code = row["Code"]
+            country_df = date_df[1].loc[date_df[1]["Code"]==code]
+            if country == "USA":
+                print(country_df)
+            
+            if (country_df.shape[0] != 0):
+                # total = country_df[["Deaths", "Cases", "Tests"]].sum()
+                deaths = country_df["Deaths"].sum()
+                cases = country_df["Cases"].sum()
+                tests = country_df["Tests"].sum()
+
+                last_seen_deaths = update_last_seen_dictionary(last_seen_deaths, code, deaths)
+                last_seen_cases = update_last_seen_dictionary(last_seen_cases, code, cases)
+                last_seen_tests = update_last_seen_dictionary(last_seen_tests, code, tests)
+
             covid_total = pd.concat([covid_total, pd.DataFrame({"Date": [date], 
                                             "Code": [code], 
                                             "Country": [country], 
-                                            "Deaths": total["Deaths"],
-                                            "Cases": total["Cases"],
-                                            "Tests": total["Tests"],
+                                            "Deaths": get_element_from_last_seen_dictionary(last_seen_deaths, code),
+                                            "Cases": get_element_from_last_seen_dictionary(last_seen_cases, code),
+                                            "Tests": get_element_from_last_seen_dictionary(last_seen_tests, code),
                                             "id": [id]
                                             })], ignore_index=True)
     covid_total.to_csv("covid_grouped.csv")
+
+def update_last_seen_dictionary(dict, key, value):
+    if(not math.isnan(value)):
+        dict[key] = value
+         
+    return dict
+
+def get_element_from_last_seen_dictionary(dict, key):
+    if (not key in dict):
+        #print(value)
+        return 0
+    else:
+        return dict[key]
 
 ### ---------- Functions for plotting ---------- ###
 
@@ -60,10 +101,14 @@ def make_background(countries):
     )
     return background
 
-def map_deaths(countries, covid):
+def covid_map(countries, covid, arg="Deaths"):
 
     #Time conversion
     covid["Date"] = covid["Date"].map(lambda x: pd.to_datetime(x).timestamp()*1000)
+
+    #remove when not testing
+    covid = covid.head(5000)
+
     first_date = covid["Date"].min()
     last_date = covid["Date"].max()
 
@@ -95,15 +140,20 @@ def map_deaths(countries, covid):
         lookup="id",
         from_=alt.LookupData(countries, "id", fields=["type", "properties", "geometry"])
     ).encode(
-        color="Deaths:Q",
-        tooltip=[alt.Tooltip("Country", type="nominal"), alt.Tooltip("Deaths", type="quantitative")]
+        color=alt.Color(arg+":Q", scale=alt.Scale(domain=[0, 200000], scheme="viridis")),
+        tooltip=[alt.Tooltip("Country", type="nominal"), alt.Tooltip(arg, type="quantitative")]
     )
     return map
 
 
 ###  ---------- Main  ---------- ###
+group_covid_by_date_cum(covid)
 covid_total = pd.read_csv("covid_grouped.csv")
 
+#merica = covid_total.loc[covid_total["Code"] == "US"]
+#for i in range(250):
+##    print(merica.iloc[i:i+1])
+
 chart = make_background(countries)
-chart += map_deaths(countries, covid_total)
+chart += covid_map(countries, covid_total, arg="Deaths")
 chart.show()

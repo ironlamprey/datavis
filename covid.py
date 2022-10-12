@@ -28,10 +28,6 @@ covid = covid[covid["Age"] != "TOT"]
 
 #Group by date for heatmap
 #TODO: The cases, deaths etc are commulated, if we want separate days this is doable
-#TODO: fill out missing dates for countries
-        #for country_df in date_df[1].groupby("Country"):
-
-# TODO THIS DOES NOT WORK PROPERLY, seems to be Groupby in Date not working.
 def group_covid_by_date_cum(covid):
     last_seen_deaths = {}
     last_seen_cases = {}

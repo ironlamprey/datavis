@@ -19,10 +19,9 @@ covid.drop(["name", "code"], axis=1, inplace=True)
 
 #Make dataframe for countries in the covid dataset
 covid_countries = covid[["Country", "Code", "id"]].drop_duplicates()
-print(covid_countries)
 
 #Date is date
-covid["Date"] = pd.to_datetime(covid["Date"])
+covid["Date"] = pd.to_datetime(covid["Date"], dayfirst=True)
 
 #Remove TOT from age for easier binning
 covid = covid[covid["Age"] != "TOT"]
@@ -32,8 +31,7 @@ covid = covid[covid["Age"] != "TOT"]
 #TODO: fill out missing dates for countries
         #for country_df in date_df[1].groupby("Country"):
 
-
-# TODO THIS DOES NOT WORK PROPERLY, seems to be Groupby not working.
+# TODO THIS DOES NOT WORK PROPERLY, seems to be Groupby in Date not working.
 def group_covid_by_date_cum(covid):
     last_seen_deaths = {}
     last_seen_cases = {}
@@ -51,8 +49,6 @@ def group_covid_by_date_cum(covid):
             country = row["Country"]
             code = row["Code"]
             country_df = date_df[1].loc[date_df[1]["Code"]==code]
-            if country == "USA":
-                print(country_df)
             
             if (country_df.shape[0] != 0):
                 # total = country_df[["Deaths", "Cases", "Tests"]].sum()
@@ -104,10 +100,10 @@ def make_background(countries):
 def covid_map(countries, covid, arg="Deaths"):
 
     #Time conversion
-    covid["Date"] = covid["Date"].map(lambda x: pd.to_datetime(x).timestamp()*1000)
+    covid["Date"] = covid["Date"].map(lambda x: pd.to_datetime(x, dayfirst=True).timestamp()*1000)
 
     #remove when not testing
-    covid = covid.head(5000)
+    #covid = covid.head(5000)
 
     first_date = covid["Date"].min()
     last_date = covid["Date"].max()
@@ -140,19 +136,15 @@ def covid_map(countries, covid, arg="Deaths"):
         lookup="id",
         from_=alt.LookupData(countries, "id", fields=["type", "properties", "geometry"])
     ).encode(
-        color=alt.Color(arg+":Q", scale=alt.Scale(domain=[0, 200000], scheme="viridis")),
+        color=arg+":Q",
         tooltip=[alt.Tooltip("Country", type="nominal"), alt.Tooltip(arg, type="quantitative")]
     )
     return map
 
 
 ###  ---------- Main  ---------- ###
-group_covid_by_date_cum(covid)
+#group_covid_by_date_cum(covid)
 covid_total = pd.read_csv("covid_grouped.csv")
-
-#merica = covid_total.loc[covid_total["Code"] == "US"]
-#for i in range(250):
-##    print(merica.iloc[i:i+1])
 
 chart = make_background(countries)
 chart += covid_map(countries, covid_total, arg="Deaths")

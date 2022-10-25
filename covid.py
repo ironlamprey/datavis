@@ -46,7 +46,7 @@ def group_covid_by_date_cum(covid):
             code = row["Code"]
             country_df = date_df[1].loc[date_df[1]["Code"]==code]
             
-            if (country_df.shape[0] != 0):
+            if (country_df.shape[0] != 0): #TODO: fix USA's holes in the data where its 0
                 # total = country_df[["Deaths", "Cases", "Tests"]].sum()
                 deaths = country_df["Deaths"].sum()
                 cases = country_df["Cases"].sum()
@@ -118,7 +118,16 @@ def covid_map(countries, covid, arg="Deaths"):
         fields=["Date"],
         bind=slider
     )
-
+    
+    # Select parameter
+    params = ["Deaths", "Cases"]
+    param_radio = alt.binding_radio(options=params, name="Measurement: ")
+    column_select = alt.selection_single(fields=["Measurement: "],
+                                     bind=param_radio,
+                                     init={"Measurement: ": 'Deaths'})
+    #alt.binding_select(options=params, name='column')
+    #color = alt.condition(select_params, )
+    
     #Make map
     map = alt.Chart(covid).mark_geoshape(
         stroke = "white"
@@ -131,16 +140,24 @@ def covid_map(countries, covid, arg="Deaths"):
     ).transform_lookup(
         lookup="id",
         from_=alt.LookupData(countries, "id", fields=["type", "properties", "geometry"])
+    ).transform_fold(
+        fold=params,
+        as_=["Measurement: ", 'value']
+    ).transform_filter(
+        column_select
     ).encode(
-        color=arg+":Q",
-        tooltip=[alt.Tooltip("Country", type="nominal"), alt.Tooltip(arg, type="quantitative")]
+        color="value:Q",
+        tooltip=[alt.Tooltip("Country", type="nominal"), alt.Tooltip("value:N", type="quantitative")]
+    ).add_selection(
+        column_select
     )
     return map
-
 
 ###  ---------- Main  ---------- ###
 #group_covid_by_date_cum(covid)
 covid_total = pd.read_csv("covid_grouped.csv")
+
+#covid_total = covid_total.tail(1000) #Comment out when not testing.
 
 chart = make_background(countries)
 chart += covid_map(countries, covid_total, arg="Deaths")

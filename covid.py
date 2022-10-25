@@ -90,7 +90,7 @@ def make_background(countries):
         "mercator"
     ).properties(
         width=800,
-        height=500
+        height=600
     ).transform_filter(
         datum.id != 10
     )
@@ -162,12 +162,12 @@ def barchart(covid):
     by_date = covid_copy.groupby("Date")
     group = by_date.get_group("2021-08-31")
     print(group.head())
-    return alt.Chart(group.head(10)).mark_bar().encode(
-        x="Country",
-        y="Deaths"
+    return alt.Chart(group).mark_bar().encode(
+        x="Deaths",
+        y="Country"
     ).properties(
-        width=800,
-        height=100
+        width=100,
+        height=800
     )
 
 ###  ---------- Main  ---------- ###
@@ -177,5 +177,5 @@ covid_total = pd.read_csv("covid_grouped.csv")
 #covid_total = covid_total.tail(1000) #Comment out when not testing.
 chart = make_background(countries)
 chart += covid_map(countries, covid_total)
-chart = alt.vconcat(chart, barchart(covid_total))
+chart = alt.hconcat(chart, barchart(covid_total))
 chart.show()

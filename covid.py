@@ -1,5 +1,6 @@
 import altair as alt
 from vega_datasets import data
+from altair import datum
 import pandas as pd
 import math
 
@@ -89,20 +90,23 @@ def make_background(countries):
         "mercator"
     ).properties(
         width=800,
-        height=600
+        height=500
+    ).transform_filter(
+        datum.id != 10
     )
     return background
 
-def covid_map(countries, covid, arg="Deaths"):
+def covid_map(countries, covid):
 
     #Time conversion
-    covid["Date"] = covid["Date"].map(lambda x: pd.to_datetime(x, dayfirst=True).timestamp()*1000)
+    covid_copy = covid.copy(deep=True)
+    covid_copy["Date"] = covid_copy["Date"].map(lambda x: pd.to_datetime(x, dayfirst=True).timestamp()*1000)
 
     #remove when not testing
     #covid = covid.head(5000)
 
-    first_date = covid["Date"].min()
-    last_date = covid["Date"].max()
+    first_date = covid_copy["Date"].min()
+    last_date = covid_copy["Date"].max()
 
     #Make slider
     #TODO: see if we can label with dates, not timestamp
@@ -120,7 +124,7 @@ def covid_map(countries, covid, arg="Deaths"):
     )
     
     # Select parameter
-    params = ["Deaths", "Cases"]
+    params = ["Deaths", "Cases", "Tests"]
     param_radio = alt.binding_radio(options=params, name="Measurement: ")
     column_select = alt.selection_single(fields=["Measurement: "],
                                      bind=param_radio,
@@ -129,7 +133,7 @@ def covid_map(countries, covid, arg="Deaths"):
     #color = alt.condition(select_params, )
     
     #Make map
-    map = alt.Chart(covid).mark_geoshape(
+    map = alt.Chart(covid_copy).mark_geoshape(
         stroke = "white"
     ).add_selection(
         select_date
@@ -153,12 +157,25 @@ def covid_map(countries, covid, arg="Deaths"):
     )
     return map
 
+def barchart(covid):
+    covid_copy = covid.copy(deep=True)
+    by_date = covid_copy.groupby("Date")
+    group = by_date.get_group("2021-08-31")
+    print(group.head())
+    return alt.Chart(group.head(10)).mark_bar().encode(
+        x="Country",
+        y="Deaths"
+    ).properties(
+        width=800,
+        height=100
+    )
+
 ###  ---------- Main  ---------- ###
 #group_covid_by_date_cum(covid)
 covid_total = pd.read_csv("covid_grouped.csv")
 
 #covid_total = covid_total.tail(1000) #Comment out when not testing.
-
 chart = make_background(countries)
-chart += covid_map(countries, covid_total, arg="Deaths")
+chart += covid_map(countries, covid_total)
+chart = alt.vconcat(chart, barchart(covid_total))
 chart.show()

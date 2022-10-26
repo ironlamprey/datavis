@@ -12,9 +12,10 @@ import math
 countries = alt.topo_feature(data.world_110m.url, "countries")
 covid_total = pd.read_csv("covid_grouped.csv")
 
-#covid_total = covid_total.tail(1000) #Comment out when not testing.
+covid_total = covid_total.tail(1000) #Comment out when not testing.
 select_date = create_select_date(covid_total)
+select_measure = create_select_measure()
 chart = make_background(countries)
-chart += covid_map(countries, covid_total, select_date)
-chart = alt.hconcat(chart, barchart(covid_total, select_date))
+chart += covid_map(countries, covid_total, select_date, select_measure)
+chart = alt.hconcat(chart, barchart(covid_total, select_date, select_measure))
 chart.show()

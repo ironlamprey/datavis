@@ -6,6 +6,9 @@ from preprocess import group_covid_by_date_cum
 from plotting import *
 import math
 
+PLOT_HEIGHT = 550
+PLOT_WIDTH = 800
+
 # Let Altair use the whole dataframe
 alt.data_transformers.disable_max_rows()
 
@@ -37,6 +40,14 @@ def create_select_date(covid):
 
     return select_date
 
+def create_select_measure():
+    measure = ["Deaths", "Cases", "Tests"]
+    measure_radio = alt.binding_radio(options=measure, name="Measurement: ")
+    select_measure = alt.selection_single(fields=["Measurement: "],
+                                     bind=measure_radio,
+                                     init={"Measurement: ": 'Deaths'})
+    return select_measure
+
 def make_background(countries):
     background = alt.Chart(countries).mark_geoshape(
         fill="lightgray",
@@ -44,25 +55,20 @@ def make_background(countries):
     ).project(
         "mercator"
     ).properties(
-        width=800,
-        height=600
+        width=PLOT_WIDTH,
+        height=PLOT_HEIGHT
     ).transform_filter(
         datum.id != 10
     )
     return background
 
-def covid_map(countries, covid, select_date):
+def covid_map(countries, covid, select_date, select_measure):
 
     #Time conversion
     covid_copy = covid.copy(deep=True)
     covid_copy["Date"] = covid_copy["Date"].map(lambda x: pd.to_datetime(x, dayfirst=True).timestamp()*1000)
 
     # Select parameter
-    params = ["Deaths", "Cases", "Tests"]
-    param_radio = alt.binding_radio(options=params, name="Measurement: ")
-    column_select = alt.selection_single(fields=["Measurement: "],
-                                     bind=param_radio,
-                                     init={"Measurement: ": 'Deaths'})
     #alt.binding_select(options=params, name='column')
     #color = alt.condition(select_params, )
     
@@ -79,26 +85,46 @@ def covid_map(countries, covid, select_date):
         lookup="id",
         from_=alt.LookupData(countries, "id", fields=["type", "properties", "geometry"])
     ).transform_fold(
-        fold=params,
+        fold=["Deaths", "Cases", "Tests"],
         as_=["Measurement: ", 'value']
     ).transform_filter(
-        column_select
+        select_measure
     ).encode(
         color="value:Q",
         tooltip=[alt.Tooltip("Country", type="nominal"), alt.Tooltip("value:N", type="quantitative")]
     ).add_selection(
-        column_select
+        select_measure
     )
     return map
 
-def barchart(covid, select_date):
+def barchart(covid, select_date, select_measure):
     covid_copy = covid.copy(deep=True)
-    by_date = covid_copy.groupby("Date")
-    group = by_date.get_group("2021-08-31")
-    return alt.Chart(group).mark_bar().encode(
-        x="Deaths",
-        y="Country"
+    covid_copy["Date"] = covid_copy["Date"].map(lambda x: pd.to_datetime(x, dayfirst=True).timestamp()*1000)
+
+    #Make radio button for sorting - couldnt fucking make it work
+    #sort_radio = alt.binding_radio(options=["Country", "-x"], name="Barchart ordering: ")
+    #select_sort = alt.selection_single(fields=["Barchart ordering: "], bind=sort_radio)
+    #sort_param = alt.Parameter(name="Barchart ordering: ", bind=sort_radio, value="-x")
+    #y = alt.Y("Country", sort=[select_sort.expr])
+    # y = alt.condition(select_sort, "Country", alt.Y("Country", sort="-x"))
+    y = alt.Y("Country", sort="-x")
+
+    return alt.Chart(covid_copy).mark_bar().encode(
+        x="value:Q",
+        y=y,
+        tooltip=[alt.Tooltip("value:Q", type="quantitative")]
+    ).add_selection(
+        select_date
+    ).transform_filter(
+        select_date
+    ).transform_fold(
+        fold=["Deaths", "Cases", "Tests"],
+        as_=["Measurement: ", 'value']
+    ).transform_filter(
+        select_measure
+    ).transform_filter(
+        datum.value != 0
     ).properties(
-        width=100,
-        height=800
+        width=PLOT_WIDTH//8,
+        height=PLOT_HEIGHT
     )

@@ -21,7 +21,7 @@ covid["Date"] = pd.to_datetime(covid["Date"], dayfirst=True)
 covid = covid[covid["Age"] != "TOT"]
 
 #Group by date for heatmap
-#TODO: The cases, deaths etc are commulated, if we want separate days this is doable
+#TODO: The cases, deaths etc are cumulated, if we want separate days this is doable
 def group_covid_by_date_cum(covid):
     last_seen_deaths = {}
     last_seen_cases = {}
@@ -40,15 +40,22 @@ def group_covid_by_date_cum(covid):
             code = row["Code"]
             country_df = date_df[1].loc[date_df[1]["Code"]==code]
             
+            # if code == "US" and str(date) == "2020-05-19 00:00:00":
+            #     print("Date: " + str(date) + "Shape[0]: " + str(country_df.shape[0]))
+
             if (country_df.shape[0] != 0): #TODO: fix USA's holes in the data where its 0
                 # total = country_df[["Deaths", "Cases", "Tests"]].sum()
                 deaths = country_df["Deaths"].sum()
                 cases = country_df["Cases"].sum()
                 tests = country_df["Tests"].sum()
 
-                last_seen_deaths = update_last_seen_dictionary(last_seen_deaths, code, deaths)
-                last_seen_cases = update_last_seen_dictionary(last_seen_cases, code, cases)
-                last_seen_tests = update_last_seen_dictionary(last_seen_tests, code, tests)
+                # For bug finding
+                # if code == "US" and str(date) == "2020-05-19 00:00:00":
+                #     print("Date: " + str(date) + "Deaths: " + str(deaths))
+
+                last_seen_deaths = update_last_seen_dictionary(last_seen_deaths, code, deaths, True)
+                last_seen_cases = update_last_seen_dictionary(last_seen_cases, code, cases, True)
+                last_seen_tests = update_last_seen_dictionary(last_seen_tests, code, tests, True)
 
             covid_total = pd.concat([covid_total, pd.DataFrame({"Date": [date], 
                                             "Code": [code], 
@@ -58,11 +65,19 @@ def group_covid_by_date_cum(covid):
                                             "Tests": get_element_from_last_seen_dictionary(last_seen_tests, code),
                                             "id": [id]
                                             })], ignore_index=True)
-    covid_total.to_csv("covid_grouped.csv")
+    covid_total.to_csv("covid_grouped2.csv")
 
-def update_last_seen_dictionary(dict, key, value):
+def update_last_seen_dictionary(dict, key, value, cumulative):
     if(not math.isnan(value)):
-        dict[key] = value
+        val = value
+
+        # Ensure that a smaller value isn't accidentally put in place of the actual value if cumulative
+        # (e.g. for USA when the count was 0 because no entry was found but the value != NaN)
+        if cumulative:
+            prevVal = get_element_from_last_seen_dictionary(dict, key)
+            val = val if (prevVal < val) else prevVal 
+
+        dict[key] = val
          
     return dict
 
@@ -72,3 +87,6 @@ def get_element_from_last_seen_dictionary(dict, key):
         return 0
     else:
         return dict[key]
+
+# ----------- RUN PREPROCESSING ------------
+# group_covid_by_date_cum(covid)

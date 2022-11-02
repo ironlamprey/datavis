@@ -125,7 +125,9 @@ def barchart(covid, select_date, select_measure):
     y = alt.Y("Country", sort="-x")
 
     return alt.Chart(covid_copy).mark_bar().encode(
-        x="value:Q",
+        #TODO: play around with logscale
+        x=alt.X("value:Q", scale=alt.Scale(type="log")),
+        #x="value:Q",
         y=y,
         tooltip=[alt.Tooltip("value:Q", type="quantitative")]
     ).add_selection(
@@ -140,6 +142,6 @@ def barchart(covid, select_date, select_measure):
     ).transform_filter(
         datum.value != 0
     ).properties(
-        width=PLOT_WIDTH//8,
+        width=PLOT_WIDTH//4,
         height=PLOT_HEIGHT
     )

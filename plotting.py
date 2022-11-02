@@ -4,6 +4,7 @@ from altair import datum
 import pandas as pd
 from preprocess import group_covid_by_date_cum
 from plotting import *
+from datetime import datetime
 import math
 
 PLOT_HEIGHT = 550
@@ -16,6 +17,7 @@ def create_select_date(covid):
     #Time conversion
     covid_copy = covid.copy(deep=True)
     covid_copy["Date"] = covid_copy["Date"].map(lambda x: pd.to_datetime(x, dayfirst=True).timestamp()*1000)
+
 
     #remove when not testing
     #covid = covid.head(5000)
@@ -91,11 +93,24 @@ def covid_map(countries, covid, select_date, select_measure):
         select_measure
     ).encode(
         color="value:Q",
-        tooltip=[alt.Tooltip("Country", type="nominal"), alt.Tooltip("value:N", type="quantitative")]
+        tooltip=[alt.Tooltip("Country", type="nominal"), 
+                    alt.Tooltip("value:N", type="quantitative"),
+                    alt.Tooltip("Date", type="temporal")]
+        # text = alt.Text("Date", type="temporal")
     ).add_selection(
         select_measure
     )
-    return map
+
+    text = alt.Chart(covid_copy).mark_text(
+        dx = 0, dy = 250
+    ).transform_filter(
+        select_date
+    ).encode(
+        text = alt.Text("Date", type="temporal")
+    )
+
+
+    return map + text
 
 def barchart(covid, select_date, select_measure):
     covid_copy = covid.copy(deep=True)

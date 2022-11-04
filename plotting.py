@@ -50,6 +50,9 @@ def create_select_measure():
                                      init={"Measurement: ": 'Deaths'})
     return select_measure
 
+def create_select_country():
+    return alt.selection(type="single", fields=["Country"], init={"Country": "Denmark"}, empty="none")
+
 def make_background(countries):
     background = alt.Chart(countries).mark_geoshape(
         fill="lightgray",
@@ -64,7 +67,7 @@ def make_background(countries):
     )
     return background
 
-def covid_map(countries, covid, select_date, select_measure):
+def covid_map(countries, covid, select_date, select_measure, select_country):
 
     #Time conversion
     covid_copy = covid.copy(deep=True)
@@ -92,13 +95,15 @@ def covid_map(countries, covid, select_date, select_measure):
     ).transform_filter(
         select_measure
     ).encode(
-        color="value:Q",
+        color = alt.condition(select_country, alt.ColorValue("red"), "value:Q"),
         tooltip=[alt.Tooltip("Country", type="nominal"), 
                     alt.Tooltip("value:N", type="quantitative"),
                     alt.Tooltip("Date", type="temporal")]
         # text = alt.Text("Date", type="temporal")
     ).add_selection(
         select_measure
+    ).add_selection(
+        select_country
     )
 
     text = alt.Chart(covid_copy).mark_text(
@@ -112,10 +117,9 @@ def covid_map(countries, covid, select_date, select_measure):
 
     return map + text
 
-def barchart(covid, select_date, select_measure):
+def barchart(covid, select_date, select_measure, select_country):
     covid_copy = covid.copy(deep=True)
     covid_copy["Date"] = covid_copy["Date"].map(lambda x: pd.to_datetime(x, dayfirst=True).timestamp()*1000)
-
     #Make radio button for sorting - couldnt fucking make it work
     #sort_radio = alt.binding_radio(options=["Country", "-x"], name="Barchart ordering: ")
     #select_sort = alt.selection_single(fields=["Barchart ordering: "], bind=sort_radio)
@@ -129,6 +133,7 @@ def barchart(covid, select_date, select_measure):
         x=alt.X("value:Q", scale=alt.Scale(type="log")),
         #x="value:Q",
         y=y,
+        color = alt.condition(select_country, alt.ColorValue("red"), alt.ColorValue("steelblue")),
         tooltip=[alt.Tooltip("value:Q", type="quantitative")]
     ).add_selection(
         select_date
@@ -144,4 +149,29 @@ def barchart(covid, select_date, select_measure):
     ).properties(
         width=PLOT_WIDTH//4,
         height=PLOT_HEIGHT
+    ).add_selection(
+        select_country
+    )
+
+def age_histogram(covid, select_date, select_measure, select_country):
+    covid_copy = covid.copy(deep=True)
+    covid_copy["Date"] = covid_copy["Date"].map(lambda x: pd.to_datetime(x, dayfirst=True).timestamp()*1000)
+
+    return alt.Chart(covid_copy).mark_bar().encode(
+        x="Age:O",
+        y="value:Q",
+        tooltip=[alt.Tooltip("Country:N", type="nominal"), 
+                    alt.Tooltip("value:N", type="quantitative"),
+                    alt.Tooltip("Date", type="temporal")]
+    ).add_selection(
+        select_date
+    ).transform_filter(
+        select_date
+    ).transform_fold(
+        fold=["Deaths", "Cases", "Tests"],
+        as_=["Measurement: ", 'value']
+    ).transform_filter(
+        select_measure
+    ).transform_filter(
+        select_country
     )

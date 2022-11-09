@@ -25,7 +25,6 @@ covid = covid[covid["Age"] != "TOT"]
 def group_covid_by_date_cum(covid):
     last_seen_deaths = {}
     last_seen_cases = {}
-    last_seen_tests = {}
 
     covid_total = pd.DataFrame()
     for date_df in covid.groupby("Date"):
@@ -47,7 +46,6 @@ def group_covid_by_date_cum(covid):
                 # total = country_df[["Deaths", "Cases", "Tests"]].sum()
                 deaths = country_df["Deaths"].sum()
                 cases = country_df["Cases"].sum()
-                tests = country_df["Tests"].sum()
 
                 # For bug finding
                 # if code == "US" and str(date) == "2020-05-19 00:00:00":
@@ -55,14 +53,12 @@ def group_covid_by_date_cum(covid):
 
                 last_seen_deaths = update_last_seen_dictionary(last_seen_deaths, code, deaths, True)
                 last_seen_cases = update_last_seen_dictionary(last_seen_cases, code, cases, True)
-                last_seen_tests = update_last_seen_dictionary(last_seen_tests, code, tests, True)
 
             covid_total = pd.concat([covid_total, pd.DataFrame({"Date": [date], 
                                             "Code": [code], 
                                             "Country": [country], 
                                             "Deaths": get_element_from_last_seen_dictionary(last_seen_deaths, code),
                                             "Cases": get_element_from_last_seen_dictionary(last_seen_cases, code),
-                                            "Tests": get_element_from_last_seen_dictionary(last_seen_tests, code),
                                             "id": [id]
                                             })], ignore_index=True)
     covid_total.to_csv("covid_grouped2.csv")

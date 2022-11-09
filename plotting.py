@@ -43,7 +43,7 @@ def create_select_date(covid):
     return select_date
 
 def create_select_measure():
-    measure = ["Deaths", "Cases", "Tests"]
+    measure = ["Deaths", "Cases"]
     measure_radio = alt.binding_radio(options=measure, name="Measurement: ")
     select_measure = alt.selection_single(fields=["Measurement: "],
                                      bind=measure_radio,
@@ -140,7 +140,7 @@ def barchart(covid, select_date, select_measure, select_country):
     ).transform_filter(
         select_date
     ).transform_fold(
-        fold=["Deaths", "Cases", "Tests"],
+        fold=["Deaths", "Cases"],
         as_=["Measurement: ", 'value']
     ).transform_filter(
         select_measure
@@ -168,7 +168,7 @@ def age_histogram(covid, select_date, select_measure, select_country):
     ).transform_filter(
         select_date
     ).transform_fold(
-        fold=["Deaths", "Cases", "Tests"],
+        fold=["Deaths", "Cases"],
         as_=["Measurement: ", 'value']
     ).transform_filter(
         select_measure

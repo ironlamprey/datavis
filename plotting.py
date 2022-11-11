@@ -26,7 +26,6 @@ def create_select_date(covid):
     last_date = covid_copy["Date"].max()
 
     #Make slider
-    #TODO: see if we can label with dates, not timestamp
     slider = alt.binding_range(
         step=24*60*60*1000, #step-size 1 day
         min=first_date, 
@@ -37,7 +36,8 @@ def create_select_date(covid):
     select_date=alt.selection_single(
         name="slider",
         fields=["Date"],
-        bind=slider
+        bind=slider,
+        init={"Date": 1593216000000}
     )
 
     return select_date

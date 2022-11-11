@@ -37,7 +37,8 @@ def create_select_date(covid):
         name="slider",
         fields=["Date"],
         bind=slider,
-        init={"Date": 1593216000000}
+        # Date Denmark closed down is init
+        init={"Date": 1583884800000}
     )
 
     return select_date
@@ -51,7 +52,6 @@ def create_select_measure():
     return select_measure
 
 def create_select_country():
-    #TODO: It dont work here
     return alt.selection(type="multi", fields=["Country"], init = [{"Country": "Denmark"}], empty="none")
 
 def make_background(countries):
@@ -64,6 +64,7 @@ def make_background(countries):
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT
     ).transform_filter(
+        #Remove Antarctica
         datum.id != 10
     )
     return background
@@ -134,6 +135,7 @@ def barchart(covid, select_date, select_measure, select_country):
         x=alt.X("value:Q", scale=alt.Scale(type="log")),
         #x="value:Q",
         y=y,
+        # color = alt.condition(select_country, alt.ColorValue("red"), alt.ColorValue("steelblue")),
         color = alt.condition(select_country, alt.ColorValue("red"), alt.ColorValue("steelblue")),
         tooltip=[alt.Tooltip("value:Q", type="quantitative")]
     ).add_selection(

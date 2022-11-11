@@ -7,8 +7,8 @@ from plotting import *
 from datetime import datetime
 import math
 
-PLOT_HEIGHT = 550
-PLOT_WIDTH = 800
+PLOT_HEIGHT = 750
+PLOT_WIDTH = 950
 
 # Let Altair use the whole dataframe
 alt.data_transformers.disable_max_rows()
@@ -51,7 +51,8 @@ def create_select_measure():
     return select_measure
 
 def create_select_country():
-    return alt.selection(type="single", fields=["Country"], init={"Country": "Denmark"}, empty="none")
+    #TODO: It dont work here
+    return alt.selection(type="multi", fields=["Country"], init = [{"Country": "Denmark"}], empty="none")
 
 def make_background(countries):
     background = alt.Chart(countries).mark_geoshape(
@@ -158,8 +159,10 @@ def age_histogram(covid, select_date, select_measure, select_country):
     covid_copy["Date"] = covid_copy["Date"].map(lambda x: pd.to_datetime(x, dayfirst=True).timestamp()*1000)
 
     return alt.Chart(covid_copy).mark_bar().encode(
-        x="Age:O",
+        x=alt.X("Country:N", title=""),
         y="value:Q",
+        color="Country:N",
+        column=alt.Column("Age:O", spacing=0, title="Age"),
         tooltip=[alt.Tooltip("Country:N", type="nominal"), 
                     alt.Tooltip("value:N", type="quantitative"),
                     alt.Tooltip("Date", type="temporal")]

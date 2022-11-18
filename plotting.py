@@ -179,4 +179,7 @@ def age_histogram(covid, select_date, select_measure, select_country):
         select_measure
     ).transform_filter(
         select_country
+    ).properties(
+        width=50,
+        height = 200
     )

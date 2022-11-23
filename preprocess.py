@@ -84,5 +84,13 @@ def get_element_from_last_seen_dictionary(dict, key):
     else:
         return dict[key]
 
+def monthly_covid(covid_grouped):
+    covid_grouped["Date"] = pd.to_datetime(covid_grouped["Date"], dayfirst=True)
+    res  = covid_grouped.loc[covid_grouped["Date"].dt.is_month_end]
+    res.to_csv("covid_monthly.csv")
+
+ 
 # ----------- RUN PREPROCESSING ------------
 # group_covid_by_date_cum(covid)
+#covid_grouped = pd.read_csv("covid_grouped2.csv")
+#monthly_covid(covid_grouped)

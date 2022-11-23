@@ -199,7 +199,7 @@ def small_multiples(covid_monthly, countries, select_country, select_measure):
             ).transform_filter(
                 select_measure
             ).encode(
-                color = alt.condition(select_country, alt.ColorValue("red"), "value:Q")#, scale=alt.Scale(domain=[0, covid_monthly.loc[covid_monthly["Date"] == month]["Cases"].max()])))
+                color = alt.condition(select_country, alt.ColorValue("red"), alt.Color("value:Q", legend=None))
             ).add_selection(
                 select_measure
             ).add_selection(

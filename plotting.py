@@ -54,15 +54,15 @@ def create_select_measure():
 def create_select_country():
     return alt.selection(type="multi", fields=["Country"], init = [{"Country": "Denmark"}], empty="none")
 
-def make_background(countries):
+def make_background(countries, width=PLOT_WIDTH, height=PLOT_HEIGHT):
     background = alt.Chart(countries).mark_geoshape(
         fill="lightgray",
         stroke="white"
     ).project(
         "mercator"
     ).properties(
-        width=PLOT_WIDTH,
-        height=PLOT_HEIGHT
+        width=width,
+        height=height
     ).transform_filter(
         #Remove Antarctica
         datum.id != 10
@@ -183,3 +183,38 @@ def age_histogram(covid, select_date, select_measure, select_country):
         width=50,
         height = 200
     )
+
+def small_multiples(covid_monthly, countries, select_country, select_measure):
+    background = make_background(countries, height=150, width=150)
+    chart = alt.concat(*(background + alt.Chart(covid_monthly.loc[covid_monthly["Date"] == month]).mark_geoshape(
+                stroke = "white"
+            ).project(
+                "mercator"
+            ).transform_lookup(
+                lookup="id",
+                from_=alt.LookupData(countries, "id", fields=["type", "properties", "geometry"])
+            ).transform_fold(
+                fold=["Deaths", "Cases", "Tests"],
+                as_=["Measurement: ", 'value']
+            ).transform_filter(
+                select_measure
+            ).encode(
+                color = alt.condition(select_country, alt.ColorValue("red"), "value:Q")
+                # tooltip=[alt.Tooltip("Country", type="nominal"), 
+                #             alt.Tooltip("value:N", type="quantitative"),
+                #             alt.Tooltip("Date", type="temporal")]
+                # text = alt.Text("Date", type="temporal")
+            ).add_selection(
+                select_measure
+            ).add_selection(
+                select_country
+            ).properties(
+                height=150,
+                width=150,
+                title=month
+            )
+        for month in covid_monthly["Date"].unique()
+        ), columns=12
+    )
+
+    return chart

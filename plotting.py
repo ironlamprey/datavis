@@ -199,11 +199,7 @@ def small_multiples(covid_monthly, countries, select_country, select_measure):
             ).transform_filter(
                 select_measure
             ).encode(
-                color = alt.condition(select_country, alt.ColorValue("red"), "value:Q")
-                # tooltip=[alt.Tooltip("Country", type="nominal"), 
-                #             alt.Tooltip("value:N", type="quantitative"),
-                #             alt.Tooltip("Date", type="temporal")]
-                # text = alt.Text("Date", type="temporal")
+                color = alt.condition(select_country, alt.ColorValue("red"), "value:Q")#, scale=alt.Scale(domain=[0, covid_monthly.loc[covid_monthly["Date"] == month]["Cases"].max()])))
             ).add_selection(
                 select_measure
             ).add_selection(
@@ -215,6 +211,6 @@ def small_multiples(covid_monthly, countries, select_country, select_measure):
             )
         for month in covid_monthly["Date"].unique()
         ), columns=12
-    )
+    ).resolve_scale(color='independent')
 
     return chart

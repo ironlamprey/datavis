@@ -52,7 +52,7 @@ def create_select_measure():
     return select_measure
 
 def create_select_country():
-    return alt.selection(type="multi", fields=["Country"], init = [{"Country": "Denmark"}], empty="none")
+    return alt.selection(type="multi", fields=["Country"], empty="none")
 
 def make_background(countries, width=PLOT_WIDTH, height=PLOT_HEIGHT):
     background = alt.Chart(countries).mark_geoshape(
@@ -97,7 +97,7 @@ def covid_map(countries, covid, select_date, select_measure, select_country):
     ).transform_filter(
         select_measure
     ).encode(
-        color = alt.condition(select_country, alt.ColorValue("red"), "value:Q"),
+        color = alt.condition(select_country, alt.ColorValue("red"), alt.Color("value:Q", scale=alt.Scale(scheme="lighttealblue"))),
         tooltip=[alt.Tooltip("Country", type="nominal"), 
                     alt.Tooltip("value:N", type="quantitative"),
                     alt.Tooltip("Date", type="temporal")]
@@ -199,7 +199,17 @@ def small_multiples(covid_monthly, countries, select_country, select_measure):
             ).transform_filter(
                 select_measure
             ).encode(
-                color = alt.condition(select_country, alt.ColorValue("red"), alt.Color("value:Q", legend=None))
+                color = alt.condition(
+                    select_country, 
+                    alt.ColorValue("red"), 
+                    alt.Color(
+                        "value:Q", 
+                        legend=None, 
+                        scale=alt.Scale(
+                            scheme="lighttealblue"
+                        )
+                    )
+                )
             ).add_selection(
                 select_measure
             ).add_selection(

@@ -54,7 +54,7 @@ def create_select_measure():
 def create_select_country():
     return alt.selection(type="multi", fields=["Country"], empty="none")
 
-def make_background(countries, width=PLOT_WIDTH, height=PLOT_HEIGHT):
+def make_background(countries, width=PLOT_WIDTH*1.2, height=PLOT_HEIGHT):
     background = alt.Chart(countries).mark_geoshape(
         fill="lightgray",
         stroke="white"
@@ -151,7 +151,7 @@ def barchart(covid, select_date, select_measure, select_country):
         datum.value != 0
     ).properties(
         width=PLOT_WIDTH//4,
-        height=PLOT_HEIGHT
+        height=PLOT_HEIGHT*1.3
     ).add_selection(
         select_country
     )
@@ -180,7 +180,7 @@ def age_histogram(covid, select_date, select_measure, select_country):
     ).transform_filter(
         select_country
     ).properties(
-        width=50,
+        width=100,
         height = 200
     )
 
@@ -206,7 +206,7 @@ def small_multiples(covid_monthly, countries, select_country, select_measure):
                         "value:Q", 
                         legend=None, 
                         scale=alt.Scale(
-                            scheme="lighttealblue"
+                            scheme="greens"
                         )
                     )
                 )

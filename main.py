@@ -28,8 +28,8 @@ select_country = create_select_country()
 
 chart = make_background(countries)
 chart += covid_map(countries, covid_total, select_date, select_measure, select_country)
-chart = alt.hconcat(chart, barchart(covid_total, select_date, select_measure, select_country))
 chart = alt.vconcat(chart, age_histogram(covid, select_date, select_measure, select_country))
+chart = alt.hconcat(chart, barchart(covid_total, select_date, select_measure, select_country))
 
 chart = alt.vconcat(chart, small_multiples(covid_monthly, countries, select_country, select_measure), padding={"left": 50, "top": 550, "right": 5, "bottom": 50})
 

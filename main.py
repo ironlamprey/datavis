@@ -12,7 +12,8 @@ import sys
 args = ' '.join(sys.argv[1:])
 #group_covid_by_date_cum(covid)
 countries = alt.topo_feature(data.world_110m.url, "countries")
-covid = pd.read_csv("covid2.csv")
+covid = pd.read_csv("covid_imputed.csv")
+#covid = pd.read_csv("covid2.csv")
 covid_total = pd.read_csv("covid_grouped2.csv")
 covid_monthly = pd.read_csv("covid_monthly.csv")
 

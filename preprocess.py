@@ -13,7 +13,6 @@ covid.drop(["name", "code"], axis=1, inplace=True)
 
 #Make dataframe for countries in the covid dataset
 covid_countries = covid[["Country", "Code", "id"]].drop_duplicates()
-
 #Date is date
 covid["Date"] = pd.to_datetime(covid["Date"], dayfirst=True)
 
@@ -21,7 +20,6 @@ covid["Date"] = pd.to_datetime(covid["Date"], dayfirst=True)
 covid = covid[covid["Age"] != "TOT"]
 
 #Group by date for heatmap
-#TODO: The cases, deaths etc are cumulated, if we want separate days this is doable
 def group_covid_by_date_cum(covid):
     last_seen_deaths = {}
     last_seen_cases = {}
@@ -42,7 +40,7 @@ def group_covid_by_date_cum(covid):
             # if code == "US" and str(date) == "2020-05-19 00:00:00":
             #     print("Date: " + str(date) + "Shape[0]: " + str(country_df.shape[0]))
 
-            if (country_df.shape[0] != 0): #TODO: fix USA's holes in the data where its 0
+            if (country_df.shape[0] != 0): 
                 # total = country_df[["Deaths", "Cases", "Tests"]].sum()
                 deaths = country_df["Deaths"].sum()
                 cases = country_df["Cases"].sum()
@@ -62,6 +60,29 @@ def group_covid_by_date_cum(covid):
                                             "id": [id]
                                             })], ignore_index=True)
     covid_total.to_csv("covid_grouped2.csv")
+
+def locf(covid):
+    last_seen_df = {country["Code"]: pd.DataFrame() for i, country in covid_countries.iterrows()}
+    covid_imp = pd.DataFrame()
+    # country_df = pd.DataFrame
+    for index, row in covid_countries.iterrows():
+        code = row["Code"]
+        print(row["Country"])
+        for date_df in covid.groupby("Date"):
+            date = date_df[0]
+            country_df = date_df[1].loc[date_df[1]["Code"]==code]
+            if (country_df.shape[0] != 0): 
+                last_seen_df[code] = country_df
+            df = last_seen_df[code].copy()
+            df["Date"] = date
+            # country_df = pd.concat([country_df, df], ignore_index=True)
+            covid_imp = pd.concat([covid_imp, df], ignore_index=True)
+        # covid_imp = pd.concat([covid_imp, country_df], ignore_index=True)
+        #break
+    covid_imp.to_csv("covid_imputed.csv")
+
+
+
 
 def update_last_seen_dictionary(dict, key, value, cumulative):
     if(not math.isnan(value)):
@@ -94,3 +115,4 @@ def monthly_covid(covid_grouped):
 # group_covid_by_date_cum(covid)
 #covid_grouped = pd.read_csv("covid_grouped2.csv")
 #monthly_covid(covid_grouped)
+#locf(covid)
